@@ -30,8 +30,8 @@ void HLSPlayer::update()
     {
         if([videoPlayer isReady])
         {
-            float videoWidth = videoPlayer.avPlayerItem.presentationSize.width;
-            float videoHeight = videoPlayer.avPlayerItem.presentationSize.height;
+            videoWidth = videoPlayer.avPlayerItem.presentationSize.width;
+            videoHeight = videoPlayer.avPlayerItem.presentationSize.height;
             ofLog() << "videoWidth: " << videoWidth << " videoHeight: " << videoHeight;
             videoTexture.allocate(videoWidth, videoHeight, GL_RGBA);
             //ofTextureData& texData = videoTexture.getTextureData();
@@ -59,7 +59,13 @@ void HLSPlayer::update()
         ofLog() << "videoPlayer is Playing";
         if([videoPlayer isReady])
         {
-            [videoPlayer update];
+            unsigned char* pixels = [videoPlayer update];
+            if(pixels)
+            {
+                ofImage image;
+                image.setFromPixels(pixels, videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
+                videoTexture = image.getTexture();
+            }
         }
     }
 }

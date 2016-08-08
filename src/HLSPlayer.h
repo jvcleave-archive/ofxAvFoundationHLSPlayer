@@ -25,7 +25,8 @@ public:
     
     void draw();
     void draw(float x, float y);
-    
+    float videoWidth;
+    float videoHeight;
     
 #ifdef __OBJC__
     AVFPlayer* videoPlayer;

@@ -21,19 +21,35 @@ void uncaughtExceptionHandler(NSException *exception)
     NSLog(@"exception %@", exception);
 }
 
--(void) update
+-(unsigned char*) update
 {
     CMTime currentTime = [self.avPlayer currentTime];
     double currentTimeSeconds = CMTimeGetSeconds(currentTime);
-
+    unsigned char* pixels = NULL;
     if ([self.playerItemVideoOutput hasNewPixelBufferForItemTime:currentTime])
     {
         NSLog(@"new frame at currentTimeSeconds %f", currentTimeSeconds);
+        
+        CVPixelBufferRef pixelBuffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:NULL];
+        if(pixelBuffer)
+        {
+            NSLog(@"buffer");
+            
+            CVPixelBufferLockBaseAddress( pixelBuffer, 0);
+            
+            size_t bufferWidth = CVPixelBufferGetWidth(pixelBuffer);
+            size_t bufferHeight = CVPixelBufferGetHeight(pixelBuffer);
+            pixels = (unsigned char *)CVPixelBufferGetBaseAddress(pixelBuffer);
+            CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+        }
+
+        
     }else
     {
         NSLog(@"NO new frame at currentTimeSeconds %f", currentTimeSeconds);
 
     }
+    return pixels;
 }
 
 -(BOOL) isReady

@@ -25,6 +25,6 @@
 -(void)endCreateTexture;
 -(BOOL) isPlaying;
 -(BOOL) isReady;
--(void) update;
+-(unsigned char*) update;
 @end
 
