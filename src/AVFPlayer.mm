@@ -5,7 +5,12 @@
 
 @synthesize avPlayerItem = _avPlayerItem;
 @synthesize avPlayer = _avPlayer;
-static const NSString *ItemStatusContext = @"ItemStatusContext";
+@synthesize keyPaths = _keyPaths;
+@synthesize playerItemVideoOutput = _playerItemVideoOutput;
+
+
+static int KVOContext = 17;
+static BOOL playing = NO;
 
 
 void uncaughtExceptionHandler(NSException *exception)
@@ -14,6 +19,71 @@ void uncaughtExceptionHandler(NSException *exception)
 }
 
 
+-(BOOL) isPlaying
+{
+    if(playing)
+    {
+#if 0
+        switch(self.avPlayer.status)
+        {
+            case AVPlayerStatusUnknown:
+            {
+                NSLog(@"AVPlayerStatusUnknown");
+                break;
+            }
+            case AVPlayerStatusReadyToPlay:
+            {
+                NSLog(@"AVPlayerStatusReadyToPlay");
+
+                break;
+            }
+            case AVPlayerStatusFailed:
+            {
+                NSLog(@"AVPlayerStatusFailed");
+                break;
+            }
+        }
+#endif
+        
+#if 1
+        if(self.avPlayer.status == AVPlayerStatusReadyToPlay)
+        {
+            CMTime currentTime = [self.avPlayerItem currentTime];
+            double currentTimeSeconds = CMTimeGetSeconds(currentTime);
+            NSLog(@"currentTimeSeconds %f", currentTimeSeconds);
+            
+            CVPixelBufferRef buffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:nil];
+            
+            if (buffer)
+            {
+                CVOpenGLTextureRef texture = NULL;
+                CVPixelBufferLockBaseAddress(buffer, kCVPixelBufferLock_ReadOnly);
+                CVReturn err = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault,self.textureCache,buffer,0,&texture);
+                
+                if (texture)
+                {
+                    if (err == noErr)
+                    {
+                        self.texture = texture;
+                        self.tilesAreLoaded = YES;
+                        isNewImageAvailable = YES;
+                    }
+                    
+                    CVOpenGLTextureRelease(texture);
+                }
+                
+                CVOpenGLTextureCacheFlush(self.textureCache, 0);
+                CVPixelBufferUnlockBaseAddress(buffer,kCVPixelBufferLock_ReadOnly);
+                CVPixelBufferRelease(buffer);
+            }
+            NSLog(@"self.avPlayer.status AVPlayerStatusReadyToPlay");
+        }
+#endif
+        
+
+    }
+    return playing;
+}
 -(id) init
 {
     self = [super init];
@@ -27,31 +97,57 @@ void uncaughtExceptionHandler(NSException *exception)
 {
     
 
-    
+    /*
     NSDictionary* pixelBufferAttributes = @{
         (NSString*) kCVPixelBufferIOSurfacePropertiesKey : @{}, // generally want this especially on iOS
         (NSString *)kCVPixelBufferOpenGLCompatibilityKey : @YES, // should never be no.
         (NSString *)kCVPixelBufferPixelFormatTypeKey     : [NSNumber numberWithInt:kCVPixelFormatType_32ARGB]
         };
-    
+    */
 
     self.avPlayerItem = [[AVPlayerItem playerItemWithURL:url] retain];
     self.avPlayer = [AVPlayer playerWithPlayerItem:self.avPlayerItem];
     if(self.avPlayer != nil)
     {
-        [self.avPlayerItem addObserver:self forKeyPath:@"status" options:0 context:&ItemStatusContext];
+        [self.avPlayerItem addObserver:self forKeyPath:@"status" options:0 context:&KVOContext];
+        
 
     }
-    AVPlayerItemVideoOutput* playerItemVideoOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:pixelBufferAttributes];
-    NSArray* assetKeysRequiredToPlay = @[@"playable",
-                                         @"hasProtectedContent",
-                                         @"exportable",
-                                         @"readable",
-                                         @"composable",
-                                         @"tracks"];
+    //self.playerItemVideoOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:pixelBufferAttributes];
+    NSArray* assetKeysRequiredToPlay = @[@"tracks"];
     
     AVURLAsset* asset = [AVURLAsset URLAssetWithURL:url options:nil];
+    NSLog(@"createAssets");
+    NSDictionary* pixelBufferAttributes = @{ (id)kCVPixelBufferPixelFormatTypeKey : [NSNumber numberWithInt:kCVPixelFormatType_32BGRA] };
+    self.playerItemVideoOutput = [[[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:pixelBufferAttributes] autorelease];
+    self.avPlayerItem = [AVPlayerItem playerItemWithAsset:asset];
+    [self.avPlayerItem addOutput:self.playerItemVideoOutput];
+    self.avPlayer = [AVPlayer playerWithPlayerItem:self.avPlayerItem ];
     
+    NSKeyValueObservingOptions options = NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial;
+    
+     self.keyPaths = @[@"player.currentItem",
+                           @"player.rate",
+                           @"currentItem.presentationSize",
+                           @"currentItem.asset",
+                           @"currentItem.duration",
+                           @"currentItem.status"];
+    for (NSString* keyPath in self.keyPaths)
+    {
+        [self.avPlayer addObserver:self
+                        forKeyPath:keyPath
+                           options:options
+                           context:&KVOContext];
+    }
+
+    NSArray<AVPlayerItemTrack *>* tracks = self.avPlayerItem.tracks;
+    CGSize presentationSize = self.avPlayerItem.presentationSize;
+    CMTime duration = self.avPlayerItem.asset.duration;
+    float preferredRate = self.avPlayerItem.asset.preferredRate;
+    float preferredVolume = self.avPlayerItem.asset.preferredVolume;
+    CGAffineTransform preferredTransform = self.avPlayerItem.asset.preferredTransform;
+    NSArray<AVMetadataItem *>* timedMetadata = self.avPlayerItem.timedMetadata;
+
     
     [asset loadValuesAsynchronouslyForKeys:assetKeysRequiredToPlay completionHandler:^{
         
@@ -98,7 +194,6 @@ void uncaughtExceptionHandler(NSException *exception)
                             NSLog(@"AVMediaCharacteristicLegible count %ld", (unsigned long)[[asset tracksWithMediaCharacteristic:AVMediaCharacteristicLegible] count]);
                             NSLog(@"AVMediaCharacteristicFrameBased count %ld", (unsigned long)[[asset tracksWithMediaCharacteristic:AVMediaCharacteristicFrameBased] count]);
                              */
-                            [self createAssets:asset];
 
                         }
                         break;
@@ -146,7 +241,7 @@ void uncaughtExceptionHandler(NSException *exception)
             
             NSMutableDictionary* loadedAssets = [NSMutableDictionary dictionary];
             
-            NSLog(@"loadedAssets %@", loadedAssets);
+            //NSLog(@"loadedAssets %@", loadedAssets);
             //loadedAssets[title] = asset;
 
         });
@@ -208,41 +303,74 @@ void uncaughtExceptionHandler(NSException *exception)
 
 }
 
--(void) createAssets:(AVURLAsset*)asset
-{
-    NSLog(@"createAssets");
-    NSDictionary* settings = @{ (id)kCVPixelBufferPixelFormatTypeKey : [NSNumber numberWithInt:kCVPixelFormatType_32BGRA] };
-    AVPlayerItemVideoOutput* output = [[[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:settings] autorelease];
-    self.avPlayerItem = [AVPlayerItem playerItemWithAsset:asset];
-    [self.avPlayerItem addOutput:output];
-    self.avPlayer = [AVPlayer playerWithPlayerItem:self.avPlayerItem ];
-    [self.avPlayer addObserver:self forKeyPath:@"currentItem.presentationSize" options:NSKeyValueObservingOptionNew context:NULL];
-   
-    NSArray<AVPlayerItemTrack *>* tracks = self.avPlayerItem.tracks;
-    CGSize presentationSize = self.avPlayerItem.presentationSize;
-    CMTime duration = self.avPlayerItem.asset.duration;
-    float preferredRate = self.avPlayerItem.asset.preferredRate;
-    float preferredVolume = self.avPlayerItem.asset.preferredVolume;
-    CGAffineTransform preferredTransform = self.avPlayerItem.asset.preferredTransform;
-    NSArray<AVMetadataItem *>* timedMetadata = self.avPlayerItem.timedMetadata;
-}
+
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
 
-    if (context != &ItemStatusContext) {
-        // KVO isn't for us.
-        //[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-        //return;
-    }
-    NSLog(@"keyPath: %@", keyPath);
-    NSLog(@"object: %@", object);
-    NSLog(@"change: %@", change);
-    if ([keyPath isEqualToString:@"currentItem.presentationSize"]) {
     
-        NSLog(@"currentItem.presentationSize");
-        CGSize presentationSize = self.avPlayerItem.presentationSize;
-        // NSLog(@"presentationSize: %@", presentationSize);
-        
+    for (NSString* KeyPath in self.keyPaths)
+    {
+        if([keyPath isEqualToString:KeyPath])
+        {
+            //NSLog(@"MATCH %@", keyPath);
+        }
     }
+    
+    if ([keyPath isEqualToString:@"currentItem.duration"])
+    {
+        CMTime duration = self.avPlayerItem.asset.duration;
+        
+        double durationSeconds = CMTimeGetSeconds(duration);
+        NSLog(@"durationSeconds %f", durationSeconds);
+        if(!playing)
+        {
+            playing = YES;
+            [self.avPlayer play];
+        }
+       // NSLog(@"duration");
+       // NSLog(@"duration object: %@", object);
+       // NSLog(@"duration change: %@", change);
+
+    }
+    if ([keyPath isEqualToString:@"currentItem.status"])
+    {
+        NSLog(@"status");
+        NSLog(@"status object: %@", object);
+        NSLog(@"status change: %@", change);
+        
+        NSNumber *kindStatusAsNumber = change[NSKeyValueChangeKindKey];
+        
+        NSNumber *newStatusAsNumber = change[NSKeyValueChangeNewKey];
+        AVPlayerItemStatus newStatus = AVPlayerItemStatusUnknown;
+        if([newStatusAsNumber isKindOfClass:[NSNumber class]])
+        {
+            newStatus = (AVPlayerItemStatus)newStatusAsNumber.integerValue;
+        }
+       
+        
+        if (newStatus == AVPlayerItemStatusFailed)
+        {
+            NSLog(@"status error %@", self.avPlayer.currentItem.error.localizedDescription);
+        }else
+        {
+            NSLog(@"newStatus: %ld", newStatus);
+        }
+
+    }
+    
+#if 0
+    if ([keyPath isEqualToString:@"player.currentItem.presentationSize"]) {
+    
+        //NSLog(@"currentItem.presentationSize");
+        CGSize presentationSize = self.avPlayerItem.presentationSize;
+        NSLog(@"width: %f %f", presentationSize.width, presentationSize.height);
+        
+    }else
+    {
+        NSLog(@"else keyPath: %@", keyPath);
+        NSLog(@"else object: %@", object);
+        NSLog(@"else change: %@", change);
+    }
+#endif
     //NSLog(@"context: %@", (NSString *)context);
 }
 

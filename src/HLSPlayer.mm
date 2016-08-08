@@ -22,9 +22,13 @@ bool HLSPlayer::load(string name)
 
 }
 
+
 void HLSPlayer::update()
 {
-
+    if([videoPlayer isPlaying])
+    {
+        ofLog() << "videoPlayer is Playing";
+    }
 }
 
 void HLSPlayer::draw()

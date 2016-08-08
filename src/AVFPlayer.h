@@ -11,9 +11,15 @@
 {
     AVPlayerItem* _avPlayerItem;
     AVPlayer* _avPlayer;
+    NSArray* _keyPaths;
+    AVPlayerItemVideoOutput* _playerItemVideoOutput;
+    
 }
 @property(nonatomic, retain) AVPlayerItem* avPlayerItem;
 @property(nonatomic, retain) AVPlayer* avPlayer;
+@property(nonatomic, retain) NSArray* keyPaths;
+@property(nonatomic, retain) AVPlayerItemVideoOutput* playerItemVideoOutput;
+
 -(void) loadFromURL:(NSURL *)url;
 
 @end
