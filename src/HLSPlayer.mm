@@ -42,13 +42,13 @@ void HLSPlayer::update()
             textureCacheID = [videoPlayer beginCreateTexture];
             
             videoTexture.setUseExternalTextureID(textureCacheID);
-            /*videoTexture.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
+            videoTexture.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
             videoTexture.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
             if(ofIsGLProgrammableRenderer() == false) {
                 videoTexture.bind();
                 glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
                 videoTexture.unbind();
-            }*/
+            }
             [videoPlayer endCreateTexture];
         }
     }
@@ -59,11 +59,7 @@ void HLSPlayer::update()
         ofLog() << "videoPlayer is Playing";
         if([videoPlayer isReady])
         {
-            unsigned int textureID = [videoPlayer update];
-            videoTexture.setUseExternalTextureID(textureCacheID);
-
-         
-
+            [videoPlayer update];
         }
     }
 }
