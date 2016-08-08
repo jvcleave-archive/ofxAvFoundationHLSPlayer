@@ -27,29 +27,13 @@ public:
     void draw(float x, float y);
     float videoWidth;
     float videoHeight;
-    
+    ofImage videoImage;
+    ofTexture videoTexture;
 #ifdef __OBJC__
     AVFPlayer* videoPlayer;
 #else
     void * videoPlayer;
 #endif
-    
-    bool bFrameNew;
-    bool bResetPixels;
-    bool bUpdatePixels;
-    bool bUpdateTexture;
-    bool bUseTextureCache;
-    
-    ofPixels pixels;
-    ofPixelFormat pixelFormat;
-    ofTexture videoTexture;
-    
-#ifdef TARGET_OF_IOS
-    CVOpenGLESTextureCacheRef _videoTextureCache = nullptr;
-    CVOpenGLESTextureRef _videoTextureRef = nullptr;
-#endif
-    
-    CVOpenGLTextureCacheRef _videoTextureCache = nullptr;
-    CVOpenGLTextureRef _videoTextureRef = nullptr;
+
 };
 

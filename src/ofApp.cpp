@@ -6,7 +6,7 @@ void ofApp::setup(){
     string v1="http://192.168.200.43:1935/vod/mp4:sample.mp4/playlist.m3u8";
     string v2 = "http://devimages.apple.com/iphone/samples/bipbop/gear1/prog_index.m3u8";
     string v3="https://devimages.apple.com.edgekey.net/samplecode/avfoundationMedia/AVFoundationQueuePlayer_HLS2/master.m3u8";
-    videoPlayer.load(v2);
+    videoPlayer.load(v3);
 }
 
 //--------------------------------------------------------------
@@ -17,6 +17,7 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     videoPlayer.draw();
+    ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 20, 20, ofColor::black, ofColor::yellow);
 }
 
 //--------------------------------------------------------------
