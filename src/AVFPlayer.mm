@@ -11,11 +11,131 @@
 
 static int KVOContext = 17;
 static BOOL playing = NO;
-
+static CVOpenGLTextureCacheRef videoTextureCache = nullptr;
+static CVOpenGLTextureRef videoTextureRef = nullptr;
+CVImageBufferRef imageBuffer = nil;
+CMSampleBufferRef sampleBuffer=nil;
 
 void uncaughtExceptionHandler(NSException *exception)
 {
     NSLog(@"exception %@", exception);
+}
+
+-(unsigned int) update
+{
+    CMTime currentTime = [self.avPlayer currentTime];
+    double currentTimeSeconds = CMTimeGetSeconds(currentTime);
+
+    if ([self.playerItemVideoOutput hasNewPixelBufferForItemTime:currentTime])
+    {
+        NSLog(@"new frame at currentTimeSeconds %f", currentTimeSeconds);
+        
+        CVPixelBufferRef buffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:NULL];
+        CVOpenGLTextureRef texture = NULL;
+        CVPixelBufferLockBaseAddress(buffer,kCVPixelBufferLock_ReadOnly);
+        CVReturn err = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault, videoTextureCache, buffer,0, &texture);
+        unsigned long imageBufferPixelFormat = CVPixelBufferGetPixelFormatType(buffer);
+
+        if (texture)
+        {
+            if (err != noErr)
+            {
+                NSLog(@"err: %d", err);
+                //videoTextureCache = texture;
+                unsigned int textureCacheID = CVOpenGLTextureGetName(texture);
+                return textureCacheID;
+            }
+            
+            CVOpenGLTextureRelease(texture);
+        }
+        
+        CVOpenGLTextureCacheFlush(videoTextureCache, 0);
+        CVPixelBufferUnlockBaseAddress(buffer,kCVPixelBufferLock_ReadOnly);
+        CVPixelBufferRelease(buffer);
+
+
+    }else
+    {
+        NSLog(@"NO new frame at currentTimeSeconds %f", currentTimeSeconds);
+
+    }
+    return 0;
+}
+-(BOOL) isReady
+{
+    BOOL value = NO;
+    
+    if(self.avPlayer.status == AVPlayerStatusReadyToPlay)
+    {
+        CGSize presentationSize = self.avPlayerItem.presentationSize;
+        if(presentationSize.width > 0)
+        {
+            if(presentationSize.height > 0)
+            {
+                CMTime currentTime = [self.avPlayer currentTime];
+                double currentTimeSeconds = CMTimeGetSeconds(currentTime);
+
+                if(currentTimeSeconds>0)
+                {
+                    value = YES;
+                }
+                
+            }
+        }
+
+    }
+    return value;
+}
+
+-(unsigned int)beginCreateTexture
+{
+    
+    CMTime currentTime = [self.avPlayer currentTime];
+
+    CMSampleTimingInfo sampleTimingInfo = {
+        .duration = kCMTimeInvalid,
+        .presentationTimeStamp = currentTime,
+        .decodeTimeStamp = kCMTimeInvalid
+    };
+    
+    CMVideoFormatDescriptionRef videoInfo;
+    CVReturn error =0;
+    
+    CVPixelBufferRef buffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:NULL];
+    
+    error = CMVideoFormatDescriptionCreateForImageBuffer(NULL, buffer, &videoInfo);
+
+    
+    // create new sampleBuffer
+    error = CMSampleBufferCreateForImageBuffer(kCFAllocatorDefault,
+                                                      buffer,
+                                                      true,
+                                                      NULL,
+                                                      NULL,
+                                                      videoInfo,
+                                                      &sampleTimingInfo,
+                                                      &sampleBuffer);
+    
+    
+    imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+    CVPixelBufferLockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
+    
+    error = CVOpenGLTextureCacheCreateTextureFromImage(nullptr,
+                                                     videoTextureCache,
+                                                     imageBuffer,
+                                                     nullptr,
+                                                     &videoTextureRef);
+    
+    NSLog(@"CVOpenGLTextureCacheCreateTextureFromImage error: %d", error);
+    
+    unsigned int textureCacheID = CVOpenGLTextureGetName(videoTextureRef);
+    return textureCacheID;
+    
+}
+
+-(void)endCreateTexture
+{
+    CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
 }
 
 
@@ -45,37 +165,57 @@ void uncaughtExceptionHandler(NSException *exception)
         }
 #endif
         
-#if 1
+#if 0
         if(self.avPlayer.status == AVPlayerStatusReadyToPlay)
         {
             CMTime currentTime = [self.avPlayerItem currentTime];
             double currentTimeSeconds = CMTimeGetSeconds(currentTime);
-            NSLog(@"currentTimeSeconds %f", currentTimeSeconds);
             
+            
+
+            
+            
+            NSLog(@"currentTimeSeconds %f", currentTimeSeconds);
+
+            /*
             CVPixelBufferRef buffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:nil];
             
+            
+            err = CVOpenGLTextureCacheCreateTextureFromImage(nullptr,
+                                                             _videoTextureCache,
+                                                             imageBuffer,
+                                                             nullptr,
+                                                             &_videoTextureRef);
+            
+            textureCacheID = CVOpenGLTextureGetName(_videoTextureRef);
+            
+            */
+            
+            
+            
+#if 0
             if (buffer)
             {
                 CVOpenGLTextureRef texture = NULL;
                 CVPixelBufferLockBaseAddress(buffer, kCVPixelBufferLock_ReadOnly);
-                CVReturn err = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault,self.textureCache,buffer,0,&texture);
+                CVReturn err = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault, videoTextureCache, buffer,0, &texture);
                 
                 if (texture)
                 {
                     if (err == noErr)
                     {
-                        self.texture = texture;
-                        self.tilesAreLoaded = YES;
-                        isNewImageAvailable = YES;
+                        videoTextureCache = &texture;
+                       
                     }
                     
                     CVOpenGLTextureRelease(texture);
                 }
                 
-                CVOpenGLTextureCacheFlush(self.textureCache, 0);
+                CVOpenGLTextureCacheFlush(videoTextureCache, 0);
                 CVPixelBufferUnlockBaseAddress(buffer,kCVPixelBufferLock_ReadOnly);
                 CVPixelBufferRelease(buffer);
             }
+#endif
             NSLog(@"self.avPlayer.status AVPlayerStatusReadyToPlay");
         }
 #endif

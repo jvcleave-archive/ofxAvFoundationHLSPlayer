@@ -22,17 +22,58 @@ bool HLSPlayer::load(string name)
 
 }
 
+unsigned int textureCacheID;
 
 void HLSPlayer::update()
 {
+    if(!videoTexture.isAllocated())
+    {
+        if([videoPlayer isReady])
+        {
+            float videoWidth = videoPlayer.avPlayerItem.presentationSize.width;
+            float videoHeight = videoPlayer.avPlayerItem.presentationSize.height;
+            ofLog() << "videoWidth: " << videoWidth << " videoHeight: " << videoHeight;
+            videoTexture.allocate(videoWidth, videoHeight, GL_RGBA);
+            //ofTextureData& texData = videoTexture.getTextureData();
+            //texData.tex_t = 1.0f; // these values need to be reset to 1.0 to work properly.
+            //texData.tex_u = 1.0f; // assuming this is something to do with the way ios creates the texture cache.
+            
+            
+            textureCacheID = [videoPlayer beginCreateTexture];
+            
+            videoTexture.setUseExternalTextureID(textureCacheID);
+            /*videoTexture.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
+            videoTexture.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+            if(ofIsGLProgrammableRenderer() == false) {
+                videoTexture.bind();
+                glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+                videoTexture.unbind();
+            }*/
+            [videoPlayer endCreateTexture];
+        }
+    }
+    
+    
     if([videoPlayer isPlaying])
     {
         ofLog() << "videoPlayer is Playing";
+        if([videoPlayer isReady])
+        {
+            unsigned int textureID = [videoPlayer update];
+            videoTexture.setUseExternalTextureID(textureCacheID);
+
+         
+
+        }
     }
 }
 
 void HLSPlayer::draw()
 {
+    if(videoTexture.isAllocated())
+    {
+        videoTexture.draw(0, 0);
+    }
 
 }
 void HLSPlayer::draw(float x, float y)

@@ -21,6 +21,10 @@
 @property(nonatomic, retain) AVPlayerItemVideoOutput* playerItemVideoOutput;
 
 -(void) loadFromURL:(NSURL *)url;
-
+-(unsigned int)beginCreateTexture;
+-(void)endCreateTexture;
+-(BOOL) isPlaying;
+-(BOOL) isReady;
+-(unsigned int) update;
 @end
 
