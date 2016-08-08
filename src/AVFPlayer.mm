@@ -163,7 +163,6 @@ void uncaughtExceptionHandler(NSException *exception)
 -(id) init
 {
     self = [super init];
-    self.avPlayer = [[AVPlayer alloc] init];
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     return self;
     
