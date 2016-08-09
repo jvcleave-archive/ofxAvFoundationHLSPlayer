@@ -94,9 +94,7 @@ void uncaughtExceptionHandler(NSException *exception)
             if(presentationSize.height > 0)
             {
                 CMTime currentTime = [self.avPlayer currentTime];
-                double currentTimeSeconds = CMTimeGetSeconds(currentTime);
-
-                if(currentTimeSeconds>0)
+                if(currentTime.value>0)
                 {
                     value = YES;
                 }
