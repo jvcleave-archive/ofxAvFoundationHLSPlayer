@@ -55,7 +55,7 @@ void uncaughtExceptionHandler(NSException *exception)
     hasNewFrame = [self.playerItemVideoOutput hasNewPixelBufferForItemTime:currentTime];
     if (hasNewFrame)
     {
-        NSLog(@"new frame at currentTimeSeconds %f", currentTimeSeconds);
+        //NSLog(@"new frame at currentTimeSeconds %f", currentTimeSeconds);
         
         CVPixelBufferRef pixelBuffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:NULL];
         if(pixelBuffer)
@@ -68,7 +68,7 @@ void uncaughtExceptionHandler(NSException *exception)
         
     }else
     {
-        NSLog(@"NO new frame at currentTimeSeconds %f", currentTimeSeconds);
+        //NSLog(@"NO new frame at currentTimeSeconds %f", currentTimeSeconds);
 
     }
     return pixels;
@@ -163,7 +163,7 @@ void uncaughtExceptionHandler(NSException *exception)
 #endif
     if ([keyPath isEqualToString:@"currentItem.duration"])
     {
-        NSLog(@"durationSeconds %f", CMTimeGetSeconds(self.avPlayerItem.asset.duration));
+        //NSLog(@"durationSeconds %f", CMTimeGetSeconds(self.avPlayerItem.asset.duration));
         if(!playing)
         {
             playing = YES;
@@ -188,7 +188,7 @@ void uncaughtExceptionHandler(NSException *exception)
             NSLog(@"status error %@", self.avPlayer.currentItem.error.localizedDescription);
         }else
         {
-            NSLog(@"newStatus: %ld", newStatus);
+            //NSLog(@"newStatus: %ld", newStatus);
         }
 
     }

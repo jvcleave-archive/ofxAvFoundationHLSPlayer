@@ -25,8 +25,8 @@ public:
     
     void drawDebug();
     void draw(float x, float y);
-    float videoWidth;
-    float videoHeight;
+    float width;
+    float height;
     float duration;
     float getCurrentTime();
     ofTexture outputTexture;

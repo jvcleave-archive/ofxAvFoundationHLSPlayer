@@ -21,7 +21,7 @@ void ofApp::draw(){
     info << videoPlayer.getInfo() << endl;
     info << ofGetFrameRate() << endl;
 
-    ofDrawBitmapStringHighlight(info.str(), 20, 20, ofColor::black, ofColor::yellow);
+    ofDrawBitmapStringHighlight(info.str(), 20, 20, ofColor(ofColor::black, 90), ofColor::yellow);
 }
 
 //--------------------------------------------------------------

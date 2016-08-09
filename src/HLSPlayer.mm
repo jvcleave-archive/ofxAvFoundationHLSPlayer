@@ -5,8 +5,8 @@ HLSPlayer::HLSPlayer()
 {
     videoPlayer = NULL;
     pixels = NULL;
-    videoWidth = 0;
-    videoHeight = 0;
+    width = 0;
+    height = 0;
     duration = 0;
 }
 
@@ -31,11 +31,11 @@ void HLSPlayer::update()
         
         if([videoPlayer isReady])
         {
-            videoWidth = videoPlayer.avPlayerItem.presentationSize.width;
-            videoHeight = videoPlayer.avPlayerItem.presentationSize.height;
+            width = videoPlayer.avPlayerItem.presentationSize.width;
+            height = videoPlayer.avPlayerItem.presentationSize.height;
             
             duration = [videoPlayer duration];
-            outputTexture.allocate(videoWidth, videoHeight, GL_RGBA);
+            outputTexture.allocate(width, height, GL_RGBA);
             
         }
     }
@@ -49,7 +49,7 @@ void HLSPlayer::update()
             pixels = [videoPlayer getPixels];
             if(pixels)
             {
-                outputTexture.loadData(pixels, videoWidth, videoHeight, GL_BGRA);
+                outputTexture.loadData(pixels, width, height, GL_BGRA);
             }
         }
     }
@@ -63,8 +63,8 @@ void HLSPlayer::drawDebug()
     }
     if(outputTexture.isAllocated())
     {
-        int scaledWidth = videoWidth*.25;
-        int scaledHeight = videoHeight*.25;
+        int scaledWidth = width*.25;
+        int scaledHeight = height*.25;
         outputTexture.draw(ofGetWidth()-scaledWidth, ofGetHeight()-scaledHeight, scaledWidth, scaledHeight);
     }
 }
@@ -99,8 +99,8 @@ string HLSPlayer::getInfo()
         return "NOT READY";
     }
     stringstream info;
-    info << "width: " << videoWidth << endl;
-    info << "height: " << videoHeight << endl;
+    info << "width: " << width << endl;
+    info << "height: " << height << endl;
     info << "currentTime: " << getCurrentTime() << endl;
     info << "duration: " << duration << endl;
     info << "isFrameNew: " << [videoPlayer isFrameNew] << endl;
