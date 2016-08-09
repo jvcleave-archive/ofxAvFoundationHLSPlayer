@@ -16,13 +16,21 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    videoPlayer.draw();
-    ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 20, 20, ofColor::black, ofColor::yellow);
+    videoPlayer.drawDebug();
+    stringstream info;
+    info << videoPlayer.getInfo() << endl;
+    info << ofGetFrameRate() << endl;
+
+    ofDrawBitmapStringHighlight(info.str(), 20, 20, ofColor::black, ofColor::yellow);
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+    if(key == '1')
+    {
+        videoPlayer.seekToTimeInSeconds(3);
+    
+    }
 }
 
 //--------------------------------------------------------------

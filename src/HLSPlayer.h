@@ -23,12 +23,18 @@ public:
 
     void update();
     
-    void draw();
+    void drawDebug();
     void draw(float x, float y);
     float videoWidth;
     float videoHeight;
-    ofImage videoImage;
+    float duration;
+    float getCurrentTime();
     ofTexture videoTexture;
+    ofTexture outputTexture;
+
+    unsigned int textureCacheID;
+    void seekToTimeInSeconds(int);
+    string getInfo();
 #ifdef __OBJC__
     AVFPlayer* videoPlayer;
 #else

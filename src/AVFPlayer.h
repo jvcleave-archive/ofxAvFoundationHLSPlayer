@@ -25,6 +25,11 @@
 -(void)endCreateTexture;
 -(BOOL) isPlaying;
 -(BOOL) isReady;
--(unsigned char*) update;
+-(unsigned char*) getPixels;
+-(void)seekToTimeInSeconds:(int)seconds;
+-(float) duration;
+-(float) getCurrentTime;
+-(void) update;
+-(bool)isFrameNew;
 @end
 

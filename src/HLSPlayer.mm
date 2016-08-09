@@ -4,7 +4,10 @@
 HLSPlayer::HLSPlayer()
 {
     videoPlayer = NULL;
-    
+    textureCacheID = -1;
+    videoWidth = 0;
+    videoHeight = 0;
+    duration = 0;
 }
 
 
@@ -16,13 +19,9 @@ bool HLSPlayer::load(string name)
     NSURL* url = [NSURL URLWithString:[NSString stringWithUTF8String:name.c_str()]];
     
     [videoPlayer loadFromURL:url];
-    //
-
-    
 
 }
 
-unsigned int textureCacheID;
 
 void HLSPlayer::update()
 {
@@ -34,11 +33,10 @@ void HLSPlayer::update()
         {
             videoWidth = videoPlayer.avPlayerItem.presentationSize.width;
             videoHeight = videoPlayer.avPlayerItem.presentationSize.height;
-            ofLog() << "videoWidth: " << videoWidth << " videoHeight: " << videoHeight;
-            videoTexture.allocate(videoWidth, videoHeight, GL_RGBA);
-
             
-            //Even though videoTexture is later assigned to the ofImage texture these calls need to be made?
+            duration = [videoPlayer duration];
+            videoTexture.allocate(videoWidth, videoHeight, GL_RGBA);
+            outputTexture.allocate(videoWidth, videoHeight, GL_RGBA);
             
             textureCacheID = [videoPlayer beginCreateTexture];
             videoTexture.setUseExternalTextureID(textureCacheID);
@@ -49,37 +47,71 @@ void HLSPlayer::update()
     
     if([videoPlayer isPlaying])
     {
-        ofLog() << "videoPlayer is Playing";
         if([videoPlayer isReady])
         {
-            unsigned char* pixels = [videoPlayer update];
+            [videoPlayer update];
+            unsigned char* pixels = [videoPlayer getPixels];
             if(pixels)
             {
-                videoImage.setFromPixels(pixels, videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
-                videoTexture = videoImage.getTexture();
+                outputTexture.loadData(pixels, videoWidth, videoHeight, GL_BGRA);
+
             }
         }
     }
 }
 
-void HLSPlayer::draw()
+void HLSPlayer::drawDebug()
 {
-    if(videoImage.isAllocated())
+    if(outputTexture.isAllocated())
     {
-        videoImage.draw(0, 0);
+        outputTexture.draw(0, 0);
     }
-    if(videoTexture.isAllocated())
+    if(outputTexture.isAllocated())
     {
         int scaledWidth = videoWidth*.25;
         int scaledHeight = videoHeight*.25;
-        videoTexture.draw(ofGetWidth()-scaledWidth, ofGetHeight()-scaledHeight, scaledWidth, scaledHeight);
+        outputTexture.draw(ofGetWidth()-scaledWidth, ofGetHeight()-scaledHeight, scaledWidth, scaledHeight);
     }
-
-    
-    
-
 }
+
+
 void HLSPlayer::draw(float x, float y)
 {
-
+    if(outputTexture.isAllocated())
+    {
+        outputTexture.draw(x, y);
+    }
 }
+
+float HLSPlayer::getCurrentTime()
+{
+    if(![videoPlayer isPlaying])
+    {
+        return 0;
+    }
+    return [videoPlayer getCurrentTime];
+}
+
+void HLSPlayer::seekToTimeInSeconds(int seconds)
+{
+    [videoPlayer seekToTimeInSeconds:seconds];
+}
+
+string HLSPlayer::getInfo()
+{
+    if(![videoPlayer isPlaying])
+    {
+        return "NOT READY";
+    }
+    stringstream info;
+    info << "width: " << videoWidth << endl;
+    info << "height: " << videoHeight << endl;
+    info << "currentTime: " << getCurrentTime() << endl;
+    info << "duration: " << duration << endl;
+    info << "isFrameNew: " << [videoPlayer isFrameNew] << endl;
+
+    
+    
+    return info.str();
+}
+
