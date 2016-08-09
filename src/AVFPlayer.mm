@@ -14,10 +14,6 @@ static BOOL playing = NO;
 static BOOL doLoop = YES;
 static BOOL hasNewFrame = NO;
 
-static CVOpenGLTextureCacheRef videoTextureCache = nullptr;
-static CVOpenGLTextureRef videoTextureRef = nullptr;
-CVImageBufferRef imageBuffer = nil;
-CMSampleBufferRef sampleBuffer=nil;
 
 void uncaughtExceptionHandler(NSException *exception)
 {
@@ -30,57 +26,6 @@ void uncaughtExceptionHandler(NSException *exception)
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     return self;
     
-}
-
--(unsigned int)beginCreateTexture
-{
-    
-    CMTime currentTime = [self.avPlayer currentTime];
-    
-    CMSampleTimingInfo sampleTimingInfo = {
-        .duration = kCMTimeInvalid,
-        .presentationTimeStamp = currentTime,
-        .decodeTimeStamp = kCMTimeInvalid
-    };
-    
-    CMVideoFormatDescriptionRef videoInfo;
-    CVReturn error =0;
-    
-    CVPixelBufferRef buffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:NULL];
-    
-    error = CMVideoFormatDescriptionCreateForImageBuffer(NULL, buffer, &videoInfo);
-    
-    
-    // create new sampleBuffer
-    error = CMSampleBufferCreateForImageBuffer(kCFAllocatorDefault,
-                                               buffer,
-                                               true,
-                                               NULL,
-                                               NULL,
-                                               videoInfo,
-                                               &sampleTimingInfo,
-                                               &sampleBuffer);
-    
-    
-    imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-    CVPixelBufferLockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
-    
-    error = CVOpenGLTextureCacheCreateTextureFromImage(nullptr,
-                                                       videoTextureCache,
-                                                       imageBuffer,
-                                                       nullptr,
-                                                       &videoTextureRef);
-    
-    NSLog(@"CVOpenGLTextureCacheCreateTextureFromImage error: %d", error);
-    
-    unsigned int textureCacheID = CVOpenGLTextureGetName(videoTextureRef);
-    return textureCacheID;
-    
-}
-
--(void)endCreateTexture
-{
-    CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
 }
 
 -(void) update

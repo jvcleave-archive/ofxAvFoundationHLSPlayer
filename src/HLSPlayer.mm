@@ -4,7 +4,7 @@
 HLSPlayer::HLSPlayer()
 {
     videoPlayer = NULL;
-    textureCacheID = -1;
+    pixels = NULL;
     videoWidth = 0;
     videoHeight = 0;
     duration = 0;
@@ -26,7 +26,7 @@ bool HLSPlayer::load(string name)
 void HLSPlayer::update()
 {
 
-    if(!videoTexture.isAllocated())
+    if(!outputTexture.isAllocated())
     {
         
         if([videoPlayer isReady])
@@ -35,12 +35,8 @@ void HLSPlayer::update()
             videoHeight = videoPlayer.avPlayerItem.presentationSize.height;
             
             duration = [videoPlayer duration];
-            videoTexture.allocate(videoWidth, videoHeight, GL_RGBA);
             outputTexture.allocate(videoWidth, videoHeight, GL_RGBA);
             
-            textureCacheID = [videoPlayer beginCreateTexture];
-            videoTexture.setUseExternalTextureID(textureCacheID);
-            [videoPlayer endCreateTexture];
         }
     }
     
@@ -50,11 +46,10 @@ void HLSPlayer::update()
         if([videoPlayer isReady])
         {
             [videoPlayer update];
-            unsigned char* pixels = [videoPlayer getPixels];
+            pixels = [videoPlayer getPixels];
             if(pixels)
             {
                 outputTexture.loadData(pixels, videoWidth, videoHeight, GL_BGRA);
-
             }
         }
     }

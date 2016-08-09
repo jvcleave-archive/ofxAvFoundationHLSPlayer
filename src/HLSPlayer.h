@@ -29,10 +29,8 @@ public:
     float videoHeight;
     float duration;
     float getCurrentTime();
-    ofTexture videoTexture;
     ofTexture outputTexture;
-
-    unsigned int textureCacheID;
+    unsigned char* pixels;
     void seekToTimeInSeconds(int);
     string getInfo();
 #ifdef __OBJC__
