@@ -94,7 +94,13 @@ void HLSPlayer::seekToTimeInSeconds(int seconds)
 
 string HLSPlayer::getInfo()
 {
+    
     if(![videoPlayer isPlaying])
+    {
+        return "NOT PLAYING";
+    }
+    
+    if(![videoPlayer isReady])
     {
         return "NOT READY";
     }
