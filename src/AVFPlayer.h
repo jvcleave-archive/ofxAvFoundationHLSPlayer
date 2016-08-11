@@ -29,5 +29,9 @@
 -(float) getCurrentTime;
 -(void) update;
 -(bool)isFrameNew;
+
+-(void) togglePause;
+-(void) pause;
+-(void) resume;
 @end
 

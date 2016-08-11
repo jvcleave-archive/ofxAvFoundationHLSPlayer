@@ -10,6 +10,25 @@ HLSPlayer::HLSPlayer()
     duration = 0;
 }
 
+HLSPlayer::~HLSPlayer()
+{
+    if (videoPlayer) {
+        if(pixels)
+        {
+            delete[] pixels;
+            pixels = NULL;
+        }
+        if(outputTexture.isAllocated())
+        {
+            outputTexture.clear();
+            
+        }
+        [videoPlayer release];
+        videoPlayer = NULL;
+    }
+}
+
+
 
 bool HLSPlayer::load(string name)
 {
@@ -92,6 +111,13 @@ void HLSPlayer::seekToTimeInSeconds(int seconds)
     [videoPlayer seekToTimeInSeconds:seconds];
 }
 
+
+void HLSPlayer::togglePause()
+{
+    [videoPlayer togglePause];
+
+}
+
 string HLSPlayer::getInfo()
 {
     
@@ -115,4 +141,3 @@ string HLSPlayer::getInfo()
     
     return info.str();
 }
-

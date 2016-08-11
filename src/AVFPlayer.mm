@@ -13,7 +13,7 @@ static int KVOContext = 17;
 static BOOL playing = NO;
 static BOOL doLoop = YES;
 static BOOL hasNewFrame = NO;
-
+static BOOL paused = NO;
 
 void uncaughtExceptionHandler(NSException *exception)
 {
@@ -26,6 +26,50 @@ void uncaughtExceptionHandler(NSException *exception)
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     return self;
     
+}
+
+
+-(void)dealloc {
+    //delete obj;
+    
+    //[self.avPlayerItem removeObserver:self forKeyPath:@"status" context:&KVOContext];
+
+    for (NSString* keyPath in self.keyPaths)
+    {
+        [self.avPlayer removeObserver:self forKeyPath:keyPath context:&KVOContext];
+    }
+    
+    playing = NO;
+    hasNewFrame = NO;
+    [self.avPlayerItem release];
+    [self.avPlayer release];
+    [self.playerItemVideoOutput release];
+
+    [super dealloc];
+}
+
+-(void) togglePause
+{
+    if(paused)
+    {
+        [self resume];
+    }else
+    {
+        [self pause];
+    }
+}
+
+-(void) pause
+{
+    self.avPlayer.rate = 0.0;
+    paused = YES;
+}
+
+-(void) resume
+{
+    self.avPlayer.rate = 1.0;
+    paused = NO;
+
 }
 
 -(void) update
@@ -51,7 +95,7 @@ void uncaughtExceptionHandler(NSException *exception)
     CMTime currentTime = [self.avPlayer currentTime];
     double currentTimeSeconds = CMTimeGetSeconds(currentTime);
     unsigned char* pixels = NULL;
-    
+
     hasNewFrame = [self.playerItemVideoOutput hasNewPixelBufferForItemTime:currentTime];
     if (hasNewFrame)
     {
@@ -64,7 +108,9 @@ void uncaughtExceptionHandler(NSException *exception)
             pixels = (unsigned char *)CVPixelBufferGetBaseAddress(pixelBuffer);
             CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
         }
-
+        
+        CVPixelBufferRelease(pixelBuffer);
+        pixelBuffer = nil;
         
     }else
     {
@@ -161,7 +207,7 @@ void uncaughtExceptionHandler(NSException *exception)
 #endif
     if ([keyPath isEqualToString:@"currentItem.duration"])
     {
-        //NSLog(@"durationSeconds %f", CMTimeGetSeconds(self.avPlayerItem.asset.duration));
+        NSLog(@"durationSeconds %f", CMTimeGetSeconds(self.avPlayerItem.asset.duration));
         if(!playing)
         {
             playing = YES;

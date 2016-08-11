@@ -17,7 +17,7 @@ class HLSPlayer
 public:
     
     HLSPlayer();
-
+    ~HLSPlayer();
 	   
     bool load(string name);
 
@@ -32,12 +32,13 @@ public:
     ofTexture outputTexture;
     unsigned char* pixels;
     void seekToTimeInSeconds(int);
+    void togglePause();
     string getInfo();
 #ifdef __OBJC__
     AVFPlayer* videoPlayer;
 #else
     void * videoPlayer;
 #endif
-
+    
 };
 
