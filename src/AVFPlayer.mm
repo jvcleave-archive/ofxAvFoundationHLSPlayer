@@ -1,13 +1,9 @@
+#if !defined(TARGET_RASPBERRY_PI)
+
 #import "AVFPlayer.h"
 
 
 @implementation AVFPlayer
-
-@synthesize avPlayerItem = _avPlayerItem;
-@synthesize avPlayer = _avPlayer;
-@synthesize keyPaths = _keyPaths;
-@synthesize playerItemVideoOutput = _playerItemVideoOutput;
-
 
 static int KVOContext = 17;
 static BOOL playing = NO;
@@ -24,6 +20,7 @@ void uncaughtExceptionHandler(NSException *exception)
 {
     self = [super init];
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
+    self.errorStrings = [[NSMutableArray alloc] init];
     return self;
     
 }
@@ -69,9 +66,12 @@ void uncaughtExceptionHandler(NSException *exception)
 {
     self.avPlayer.rate = 1.0;
     paused = NO;
-
 }
 
+-(void) mute
+{
+    self.avPlayer.volume = 0.0;
+}
 -(void) update
 {
     CMTime currentTime = [self.avPlayer currentTime];
@@ -230,6 +230,8 @@ void uncaughtExceptionHandler(NSException *exception)
         if (newStatus == AVPlayerItemStatusFailed)
         {
             NSLog(@"status error %@", self.avPlayer.currentItem.error.localizedDescription);
+            
+            [self.errorStrings addObject:self.avPlayer.currentItem.error.localizedDescription];
         }else
         {
             //NSLog(@"newStatus: %ld", newStatus);
@@ -252,6 +254,15 @@ void uncaughtExceptionHandler(NSException *exception)
 
 }
 
+-(BOOL) hasErrors
+{
+    BOOL result = [self.errorStrings count] > 0;
+    return result;
+}
+-(void) clearErrors
+{
+    [self.errorStrings removeAllObjects];
+}
 -(BOOL) isPlaying
 {
     return playing;
@@ -259,3 +270,4 @@ void uncaughtExceptionHandler(NSException *exception)
 
 
 @end
+#endif

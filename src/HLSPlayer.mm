@@ -1,3 +1,5 @@
+#if !defined(TARGET_RASPBERRY_PI)
+
 #include "HLSPlayer.h"
 
 
@@ -13,11 +15,13 @@ HLSPlayer::HLSPlayer()
 HLSPlayer::~HLSPlayer()
 {
     if (videoPlayer) {
+        /*
         if(pixels)
         {
             delete[] pixels;
             pixels = NULL;
         }
+         */
         if(outputTexture.isAllocated())
         {
             outputTexture.clear();
@@ -70,6 +74,15 @@ void HLSPlayer::update()
             {
                 outputTexture.loadData(pixels, width, height, GL_BGRA);
             }
+            if([videoPlayer hasErrors])
+            {
+                for (NSString* errorString in videoPlayer.errorStrings)
+                {
+                    const char *cString = [errorString UTF8String];
+                    errors.push_back(cString);
+                }
+                [videoPlayer clearErrors];
+            }
         }
     }
 }
@@ -118,6 +131,11 @@ void HLSPlayer::togglePause()
 
 }
 
+void HLSPlayer::mute()
+{
+    [videoPlayer mute];
+    
+}
 string HLSPlayer::getInfo()
 {
     
@@ -141,3 +159,4 @@ string HLSPlayer::getInfo()
     
     return info.str();
 }
+#endif

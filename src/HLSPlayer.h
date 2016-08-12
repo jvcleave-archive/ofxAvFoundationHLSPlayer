@@ -1,5 +1,5 @@
 #pragma once
-
+#if !defined(TARGET_RASPBERRY_PI)
 #include "ofMain.h"
 
 
@@ -34,6 +34,8 @@ public:
     void seekToTimeInSeconds(int);
     void togglePause();
     string getInfo();
+    vector<string> errors;
+    void mute();
 #ifdef __OBJC__
     AVFPlayer* videoPlayer;
 #else
@@ -41,4 +43,4 @@ public:
 #endif
     
 };
-
+#endif
