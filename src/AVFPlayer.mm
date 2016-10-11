@@ -52,6 +52,17 @@ void uncaughtExceptionHandler(NSException *exception)
         self->outputTexture.clear();
         
     }
+    if(self->pixels)
+    {
+        delete[] self->pixels;
+        self->pixels = NULL;
+    }
+    
+    if(self->myPixels)
+    {
+        delete self->myPixels;
+        self->myPixels = NULL;
+    }
     [super dealloc];
 }
 
@@ -101,6 +112,7 @@ void uncaughtExceptionHandler(NSException *exception)
 {
     return hasNewFrame;
 }
+
 -(void) draw
 {
     if(self->outputTexture.isAllocated())

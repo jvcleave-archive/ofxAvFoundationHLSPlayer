@@ -13,6 +13,7 @@
 
 @interface AVFPlayer : NSObject
 {
+@public
     ofPixels* myPixels;
     unsigned char* pixels;
     ofTexture outputTexture;
@@ -46,7 +47,6 @@
 -(void) resume;
 -(void) mute;
 -(void) draw;
-
 @end
 
 #endif

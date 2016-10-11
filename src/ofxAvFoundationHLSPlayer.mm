@@ -69,19 +69,20 @@ void ofxAvFoundationHLSPlayer::update()
 
 void ofxAvFoundationHLSPlayer::drawDebug()
 {
-    [videoPlayer draw];
-#if 0
+    
     if(videoPlayer->outputTexture.isAllocated())
     {
         videoPlayer->outputTexture.draw(0, 0);
     }
     if(videoPlayer->outputTexture.isAllocated())
     {
-        int scaledWidth = width*.25;
-        int scaledHeight = height*.25;
-        outputTexture.draw(ofGetWidth()-scaledWidth, ofGetHeight()-scaledHeight, scaledWidth, scaledHeight);
+        int scaledWidth = videoPlayer->width*.25;
+        int scaledHeight = videoPlayer->height*.25;
+        videoPlayer->outputTexture.draw(ofGetWidth()-scaledWidth,
+                                        ofGetHeight()-scaledHeight,
+                                        scaledWidth,
+                                        scaledHeight);
     }
-#endif
 }
 
 
@@ -116,7 +117,7 @@ void ofxAvFoundationHLSPlayer::togglePause()
     [videoPlayer togglePause];
 
 }
-
+#endif
 void ofxAvFoundationHLSPlayer::mute()
 {
     [videoPlayer mute];
@@ -145,4 +146,3 @@ string ofxAvFoundationHLSPlayer::getInfo()
     
     return info.str();
 }
-#endif
