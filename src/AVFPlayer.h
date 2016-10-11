@@ -1,3 +1,5 @@
+#include "ofMain.h"
+
 #if !defined(TARGET_RASPBERRY_PI)
 
 #import <Foundation/Foundation.h>
@@ -10,6 +12,14 @@
 
 
 @interface AVFPlayer : NSObject
+{
+    ofPixels* myPixels;
+    unsigned char* pixels;
+    ofTexture outputTexture;
+    int width;
+    int height;
+    int pixelSize;
+}
 
 @property(nonatomic, retain) AVPlayerItem* avPlayerItem;
 @property(nonatomic, retain) AVPlayer* avPlayer;
@@ -23,7 +33,8 @@
 -(BOOL) hasErrors;
 -(void) clearErrors;
 
--(unsigned char*) getPixels;
+-(void) updatePixels;
+-(void) releasePixels;
 -(void)seekToTimeInSeconds:(int)seconds;
 -(float) duration;
 -(float) getCurrentTime;
@@ -34,6 +45,7 @@
 -(void) pause;
 -(void) resume;
 -(void) mute;
+-(void) draw;
 
 @end
 

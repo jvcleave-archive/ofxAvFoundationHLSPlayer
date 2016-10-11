@@ -21,6 +21,11 @@ void uncaughtExceptionHandler(NSException *exception)
     self = [super init];
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     self.errorStrings = [[NSMutableArray alloc] init];
+    self->pixels = NULL;
+    self->width = 0;
+    self->height = 0;
+    self->pixelSize = 0;
+    self->myPixels = NULL;
     return self;
     
 }
@@ -41,7 +46,12 @@ void uncaughtExceptionHandler(NSException *exception)
     [self.avPlayerItem release];
     [self.avPlayer release];
     [self.playerItemVideoOutput release];
-
+    [self.keyPaths release];
+    if(self->outputTexture.isAllocated())
+    {
+        self->outputTexture.clear();
+        
+    }
     [super dealloc];
 }
 
@@ -85,39 +95,133 @@ void uncaughtExceptionHandler(NSException *exception)
             [self seekToTimeInSeconds:0];
         }
     }
+    [self updatePixels];
 }
 -(bool)isFrameNew
 {
     return hasNewFrame;
 }
--(unsigned char*) getPixels
+-(void) draw
 {
-    CMTime currentTime = [self.avPlayer currentTime];
-    double currentTimeSeconds = CMTimeGetSeconds(currentTime);
-    unsigned char* pixels = NULL;
-
-    hasNewFrame = [self.playerItemVideoOutput hasNewPixelBufferForItemTime:currentTime];
-    if (hasNewFrame)
+    if(self->outputTexture.isAllocated())
     {
+        self->outputTexture.draw(0, 0);
+
+    }
+}
+-(void) updatePixels
+{
+    CGSize presentationSize = self.avPlayerItem.presentationSize;
+    NSLog(@"presentationSize.width %f, presentationSize.height, %f", presentationSize.width, presentationSize.height);
+#if 0
+    BOOL needsResize = NO;
+    int pixelSize = 0;
+    if(self->width != presentationSize.width)
+    {
+        needsResize = YES;
+    }
+    if(self->height != presentationSize.height)
+    {
+        needsResize = YES;
+    }
+    if(needsResize)
+    {
+        
+        self->width = presentationSize.width;
+        self->height = presentationSize.height;
+        pixelSize = self->width*self->width*4;
+        
+        if(self->pixels)
+        {
+            delete[] self->pixels;
+            self->pixels = NULL;
+        }
+        if(!pixelSize)
+        {
+            return;
+        }
+        self->pixels = new unsigned char[pixelSize];
+        self->myPixels.allocate(self->width, self->height, 4);
+        self->outputTexture.clear();
+        self->outputTexture.allocate(self->width, self->height, GL_RGBA);
+        
+    }
+    if(!self->pixels)
+    {
+        return;
+    }
+#endif
+    CMTime currentTime = [self.avPlayer currentTime];
+
+    BOOL hasNewPixels = [self.playerItemVideoOutput hasNewPixelBufferForItemTime:currentTime];
+    if (hasNewPixels)
+    {
+        
+        
+        
+        self->width = presentationSize.width;
+        self->height = presentationSize.height;
         //NSLog(@"new frame at currentTimeSeconds %f", currentTimeSeconds);
         
         CVPixelBufferRef pixelBuffer = [self.playerItemVideoOutput copyPixelBufferForItemTime:currentTime itemTimeForDisplay:NULL];
+        int DataSize = CVPixelBufferGetDataSize(pixelBuffer);
+        ofLog() << "DataSize: " << DataSize;
+        if(!DataSize)
+        {
+            return;
+
+        }
+        if(DataSize != pixelSize)
+        {
+            if(self->pixels)
+            {
+                delete[] self->pixels;
+                self->pixels = NULL;
+            }
+            if(self->myPixels)
+            {
+                delete self->myPixels;
+                self->myPixels = NULL;
+            }
+            ofLogError () << "crash ? " << DataSize << " != " << pixelSize;
+            //return;
+        }
         if(pixelBuffer)
         {
             CVPixelBufferLockBaseAddress( pixelBuffer, 0);
-            pixels = (unsigned char *)CVPixelBufferGetBaseAddress(pixelBuffer);
+            if(!self->pixels)
+            {
+                pixelSize = DataSize;
+                self->pixels = new unsigned char[DataSize];
+                
+            }
+            if(!self->myPixels)
+            {
+                self->myPixels = new ofPixels();
+                self->myPixels->allocate(self->width, self->height, 4);
+                
+            }
+            memcpy(self->pixels, (unsigned char *)CVPixelBufferGetBaseAddress(pixelBuffer), pixelSize); 
+            
+            self->myPixels->setFromPixels(self->pixels, self->width, self->height, OF_PIXELS_BGRA);
+            if(self->myPixels->getData())
+            {
+                self->outputTexture.loadData(*self->myPixels);
+            }
+            
+            
             CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
         }
         
         CVPixelBufferRelease(pixelBuffer);
         pixelBuffer = nil;
-        
+        hasNewFrame = true;
     }else
     {
+        hasNewFrame = false;
         //NSLog(@"NO new frame at currentTimeSeconds %f", currentTimeSeconds);
 
     }
-    return pixels;
 }
 
 
@@ -135,6 +239,7 @@ void uncaughtExceptionHandler(NSException *exception)
     if(self.avPlayer.status == AVPlayerStatusReadyToPlay)
     {
         CGSize presentationSize = self.avPlayerItem.presentationSize;
+        NSLog(@"presentationSize.width %f, presentationSize.height, %f", presentationSize.width, presentationSize.height);
         if(presentationSize.width > 0)
         {
             if(presentationSize.height > 0)
@@ -196,12 +301,12 @@ void uncaughtExceptionHandler(NSException *exception)
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
 
-#if 0
+#if 1
     for (NSString* KeyPath in self.keyPaths)
     {
         if([keyPath isEqualToString:KeyPath])
         {
-            //NSLog(@"MATCH %@", keyPath);
+            NSLog(@"MATCH %@", keyPath);
         }
     }
 #endif
@@ -234,7 +339,7 @@ void uncaughtExceptionHandler(NSException *exception)
             [self.errorStrings addObject:self.avPlayer.currentItem.error.localizedDescription];
         }else
         {
-            //NSLog(@"newStatus: %ld", newStatus);
+            NSLog(@"newStatus: %ld", newStatus);
         }
 
     }
